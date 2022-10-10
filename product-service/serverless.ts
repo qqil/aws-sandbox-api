@@ -1,6 +1,7 @@
 import type { AWS } from "@serverless/typescript";
 
-import hello from "@functions/hello";
+import getProductsById from "@functions/get-products-by-id";
+import getProductsList from "@functions/get-products-list";
 
 const serverlessConfiguration: AWS = {
   service: "product-service",
@@ -8,7 +9,10 @@ const serverlessConfiguration: AWS = {
   plugins: ["serverless-esbuild"],
   provider: {
     name: "aws",
-    runtime: "nodejs14.x",
+    runtime: "nodejs16.x",
+    profile: "default",
+    region: "eu-central-1",
+    stage: "dev",
     apiGateway: {
       minimumCompressionSize: 1024,
       shouldStartNameWithService: true,
@@ -17,9 +21,11 @@ const serverlessConfiguration: AWS = {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
       NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000",
     },
+    httpApi: {
+      cors: true,
+    },
   },
-  // import the function via paths
-  functions: { hello },
+  functions: { getProductsList, getProductsById },
   package: { individually: true },
   custom: {
     esbuild: {
@@ -27,7 +33,7 @@ const serverlessConfiguration: AWS = {
       minify: false,
       sourcemap: true,
       exclude: ["aws-sdk"],
-      target: "node14",
+      target: "node16",
       define: { "require.resolve": undefined },
       platform: "node",
       concurrency: 10,
