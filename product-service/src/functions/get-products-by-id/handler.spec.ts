@@ -16,6 +16,7 @@ describe("Handler getProductsById", () => {
 
   it("should return product and status code 200", async () => {
     const event = {
+      httpMethod: "GET",
       pathParameters: {
         productId: "108",
       },
@@ -39,6 +40,7 @@ describe("Handler getProductsById", () => {
 
   it("should return 404", async () => {
     const event = {
+      httpMethod: "GET",
       pathParameters: {
         productId: "0",
       },
@@ -49,10 +51,8 @@ describe("Handler getProductsById", () => {
       .returns(new Promise((resolve) => resolve(undefined)));
 
     const response = await getProductsById(event, null);
-    const { product } = JSON.parse(response.body);
 
     expect(response.statusCode).to.be.equal(404);
-    expect(product).to.be.equal(undefined);
     expect(getByIdStub).to.be.calledWith(event.pathParameters.productId);
   });
 });

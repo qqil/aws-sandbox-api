@@ -15,6 +15,10 @@ describe("Handler getProductsList", () => {
   });
 
   it("should return product list and status code 200", async () => {
+    const event = {
+      httpMethod: "GET",
+    };
+
     const getAllStub = sandbox
       .stub(ProductService.prototype, "getAll")
       .returns(
@@ -23,7 +27,7 @@ describe("Handler getProductsList", () => {
         )
       );
 
-    const response = await getProductsList({}, null);
+    const response = await getProductsList(event, null);
     const { products } = JSON.parse(response.body);
 
     expect(response.statusCode).to.be.equal(200);
@@ -32,15 +36,17 @@ describe("Handler getProductsList", () => {
   });
 
   it("should return 404", async () => {
+    const event = {
+      httpMethod: "GET",
+    };
+
     const getAllStub = sandbox
       .stub(ProductService.prototype, "getAll")
       .returns(new Promise((resolve) => resolve(undefined)));
 
-    const response = await getProductsList({}, null);
-    const { products } = JSON.parse(response.body);
+    const response = await getProductsList(event, null);
 
     expect(response.statusCode).to.be.equal(404);
-    expect(products).to.be.equal(undefined);
     expect(getAllStub).to.have.been.calledOnce;
   });
 });
