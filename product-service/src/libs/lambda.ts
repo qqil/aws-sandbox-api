@@ -7,5 +7,6 @@ export const middyfy = (handler) => {
   return middy(handler)
     .use(middyJsonBodyParser())
     .use(httpErrorHandler({ logger: false }))
-    .use(cors());
+    .use(cors())
+    .before((request) => console.log("Incoming request", request.event));
 };
