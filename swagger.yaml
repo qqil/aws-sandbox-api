@@ -1,0 +1,124 @@
+openapi: 3.0.3
+
+info:
+  title: Cloud store API
+  version: 0.0.1
+
+servers:
+  - url: https://tnr1mwnpyh.execute-api.eu-central-1.amazonaws.com
+  
+tags:
+  - name: products
+    description: Operations with products
+
+paths:
+  /products/{productId}:
+    get:
+      tags:
+        - products
+      summary: Get product by id
+      operationId: getProductsById
+      parameters:
+        - in: path
+          name: productId
+          description: Product id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '404':
+          description: Product not found
+
+  /products:
+    get:
+      tags:
+        - products
+      summary: Get all products
+      operationId: getProductsList
+      responses:
+        '200':
+          description: Products list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductArrayResponse'
+
+    post:
+      tags:
+        - products
+      summary: Create product
+      operationId: createProduct
+      requestBody:
+        description: Create new product
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+      responses:
+        '200':
+          description: Successfully created
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          description: Validation error
+
+components:
+  schemas:
+    ProductCreate:
+      type: object
+      required: 
+        - title
+        - price
+        - stocks
+      properties:
+        title:
+          type: string
+          example: Test Product Title
+        description:
+          type: string
+          example: Test Product Description
+        price:
+          type: number
+          format: float
+          example: 10.99
+        stocks:
+          type: integer
+          format: int32
+          example: 5
+    
+    Product:
+      allOf: 
+        - $ref: '#/components/schemas/ProductCreate'
+        - type: object
+          required: 
+          - id
+          properties:
+            id: 
+              type: string
+    
+    ProductResponse:
+      type: object
+      required:
+        - product
+      properties:
+        product:
+          $ref: '#/components/schemas/Product'
+    
+    ProductArrayResponse:
+      type: object
+      required:
+        - products
+      properties:
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'

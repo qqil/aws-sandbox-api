@@ -28,6 +28,7 @@ const serverlessConfiguration: AWS = {
     httpApi: {
       cors: {
         allowedOrigins: [
+          "http://localhost",
           "http://localhost:5173",
           "http://localhost:4173",
           "https://dhnwi3uoh4ikp.cloudfront.net",

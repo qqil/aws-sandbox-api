@@ -43,6 +43,8 @@ export class ProductService implements ProductServiceInterface {
       })
     );
 
+    if (!response.Item) return;
+
     const products = await this.joinStocks([response.Item] as Product[]);
 
     return products[0];
