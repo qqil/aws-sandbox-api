@@ -82,6 +82,7 @@ components:
       properties:
         title:
           type: string
+          minLength: 3
           example: Test Product Title
         description:
           type: string
@@ -89,10 +90,12 @@ components:
         price:
           type: number
           format: float
+          minimum: 0
           example: 10.99
         stocks:
           type: integer
           format: int32
+          minimum: 0
           example: 5
     
     Product:
