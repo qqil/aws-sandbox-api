@@ -24,6 +24,10 @@ export const formatJSONResponse = (
   return {
     statusCode: 200,
     ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
     body: JSON.stringify(response),
   };
 };

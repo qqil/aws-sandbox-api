@@ -1,9 +1,13 @@
 import { formatJSONResponse } from "@libs/api-gateway";
+import { dynamoDBDocumentClient } from "@libs/dynamodb-client";
 import { middyfy } from "@libs/lambda";
+import { ProductService } from "@services/product.service";
 import createHttpError from "http-errors";
-import { ProductService } from "src/services/product.service";
 
-const productService = new ProductService();
+const productService = new ProductService(dynamoDBDocumentClient, {
+  productsTable: process.env.TABLE_PRODUCTS,
+  stocksTable: process.env.TABLE_STOCKS,
+});
 
 const getProductsList = async () => {
   const products = await productService.getAll();
