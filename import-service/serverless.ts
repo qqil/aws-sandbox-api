@@ -1,25 +1,109 @@
 import type { AWS } from "@serverless/typescript";
-
-import hello from "@functions/hello";
+import importProductsFile from "@functions/import-products-file";
+import { cors } from "@functions/cors";
+import importFileParser from "@functions/import-file-parser";
 
 const serverlessConfiguration: AWS = {
   service: "import-service",
   frameworkVersion: "3",
+  configValidationMode: "error",
   plugins: ["serverless-esbuild"],
   provider: {
     name: "aws",
-    runtime: "nodejs14.x",
+    runtime: "nodejs16.x",
+    profile: "default",
+    region: "eu-central-1",
+    stage: "dev",
+    environment: {
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
+      NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000",
+      BUCKET_NAME: { Ref: "S3ImageBucket" },
+      UPLOAD_DIR: "uploaded",
+      PARSED_DIR: "parsed",
+    },
     apiGateway: {
       minimumCompressionSize: 1024,
       shouldStartNameWithService: true,
     },
-    environment: {
-      AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
-      NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000",
+  },
+  functions: {
+    importProductsFile: {
+      ...importProductsFile,
+      role: { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
+    },
+    importFileParser: {
+      ...importFileParser,
+      role: { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
     },
   },
-  // import the function via paths
-  functions: { hello },
+  resources: {
+    Resources: {
+      LambdaExecutionRole: {
+        Type: "AWS::IAM::Role",
+        Properties: {
+          RoleName: "ImportServiceLambdaExecutionRole",
+          ManagedPolicyArns: [
+            "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          ],
+          AssumeRolePolicyDocument: {
+            Statement: {
+              Effect: "Allow",
+              Action: "sts:AssumeRole",
+              Principal: {
+                Service: "lambda.amazonaws.com",
+              },
+            },
+          },
+        },
+      },
+
+      S3ImageBucket: {
+        Type: "AWS::S3::Bucket",
+        Properties: {
+          CorsConfiguration: {
+            CorsRules: [
+              {
+                AllowedHeaders: ["*"],
+                AllowedMethods: ["PUT"],
+                AllowedOrigins: cors.origins,
+              },
+            ],
+          },
+        },
+      },
+
+      S3ImageBucketAccessPolicy: {
+        Type: "AWS::IAM::Policy",
+        Properties: {
+          PolicyName: "ImportServiceS3ImageBucketAccessPolicy",
+          Roles: [{ Ref: "LambdaExecutionRole" }],
+          PolicyDocument: {
+            Statement: [
+              {
+                Effect: "Allow",
+                Action: [
+                  "s3:GetObject",
+                  "s3:PutObject",
+                  "s3:DeleteObject",
+                  "s3:CopyObject",
+                  "s3:GetObjectTagging",
+                  "s3:PutObjectTagging",
+                ],
+                Resource: [
+                  {
+                    "Fn::Join": [
+                      "",
+                      [{ "Fn::GetAtt": ["S3ImageBucket", "Arn"] }, "/*"],
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    },
+  },
   package: { individually: true },
   custom: {
     esbuild: {
@@ -27,7 +111,7 @@ const serverlessConfiguration: AWS = {
       minify: false,
       sourcemap: true,
       exclude: ["aws-sdk"],
-      target: "node14",
+      target: "node16",
       define: { "require.resolve": undefined },
       platform: "node",
       concurrency: 10,
