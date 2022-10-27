@@ -16,7 +16,6 @@ const productService = new ProductService(dynamoDBDocumentClient, {
 const createProduct: ValidatedEventAPIGatewayProxyEvent<
   typeof eventSchema
 > = async (event) => {
-  console.log("event body", event.body);
   const { title, description, price, stocks } = event.body;
   const product = await productService.store({
     title,
