@@ -1,0 +1,43 @@
+openapi: 3.0.3
+
+info:
+  title: Cloud store API
+  version: 0.0.1
+
+servers:
+  - url: https://z6f2t0zdj4.execute-api.eu-central-1.amazonaws.com/dev
+  
+tags:
+  - name: import
+
+paths:
+  /import:
+    get:
+      tags:
+        - import
+      summary: Created signed upload url
+      operationId: importProductsFile
+      parameters:
+        - in: query
+          name: name
+          description: Filename
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Created signed url
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignedUrlResponse'
+
+components:
+  schemas:
+    SignedUrlResponse:
+      type: object
+      required:
+        - signedUrl
+      properties:
+        signedUrl:
+          type: string
