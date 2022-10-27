@@ -15,10 +15,10 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.188.0",
     "@aws-sdk/lib-dynamodb": "^3.188.0",
-    "@middy/core": "^2.5.3",
+    "@middy/core": "^3.6.2",
     "@middy/http-cors": "^3.5.0",
     "@middy/http-error-handler": "^3.5.0",
-    "@middy/http-json-body-parser": "^2.5.3",
+    "@middy/http-json-body-parser": "^3.6.2",
     "@middy/validator": "^3.6.1",
     "http-errors": "^2.0.0"
   },

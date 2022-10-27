@@ -25,19 +25,6 @@ const serverlessConfiguration: AWS = {
       TABLE_PRODUCTS: "products",
       TABLE_STOCKS: "stocks",
     },
-    httpApi: {
-      cors: {
-        allowedOrigins: [
-          "http://localhost",
-          "http://localhost:5173",
-          "http://localhost:4173",
-          "https://dhnwi3uoh4ikp.cloudfront.net",
-        ],
-        allowedMethods: ["OPTIONS", "GET", "POST"],
-        allowedHeaders: ["Content-Type", "Authorization"],
-        allowCredentials: true,
-      },
-    },
   },
   functions: {
     getProductsList: {
