@@ -31,6 +31,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SignedUrlResponse'
+        '400':
+          description: Validation error
 
 components:
   schemas:
