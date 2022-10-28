@@ -20,7 +20,7 @@ describe("Handler importProductsFile", () => {
       ...apiGatewayEvent,
       httpMethod: "GET",
       queryStringParameters: {
-        name: "test",
+        name: "test.csv",
       },
     };
     const env = {
