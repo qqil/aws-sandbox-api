@@ -1,13 +1,12 @@
 import type { AWS } from "@serverless/typescript";
-
-import getProductsById from "@functions/get-products-by-id";
-import getProductsList from "@functions/get-products-list";
-import createProduct from "@functions/create-product";
-import dynamoDbTables from "src/database/dynamodb.tables";
+import importProductsFile from "@functions/import-products-file";
+import { cors } from "@functions/cors";
+import importFileParser from "@functions/import-file-parser";
 
 const serverlessConfiguration: AWS = {
-  service: "product-service",
+  service: "import-service",
   frameworkVersion: "3",
+  configValidationMode: "error",
   plugins: ["serverless-esbuild"],
   provider: {
     name: "aws",
@@ -15,39 +14,37 @@ const serverlessConfiguration: AWS = {
     profile: "default",
     region: "eu-central-1",
     stage: "dev",
+    environment: {
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
+      NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000",
+      BUCKET_NAME: { Ref: "S3ImageBucket" },
+      UPLOAD_DIR: "uploaded",
+      PARSED_DIR: "parsed",
+    },
     apiGateway: {
       minimumCompressionSize: 1024,
       shouldStartNameWithService: true,
     },
-    environment: {
-      AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
-      NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000",
-      TABLE_PRODUCTS: "products",
-      TABLE_STOCKS: "stocks",
-    },
   },
   functions: {
-    getProductsList: {
-      ...getProductsList,
+    importProductsFile: {
+      ...importProductsFile,
       role: { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
     },
-    getProductsById: {
-      ...getProductsById,
-      role: { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
-    },
-    createProduct: {
-      ...createProduct,
+    importFileParser: {
+      ...importFileParser,
       role: { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
     },
   },
   resources: {
     Resources: {
-      ...dynamoDbTables,
-
       LambdaExecutionRole: {
         Type: "AWS::IAM::Role",
         Properties: {
-          RoleName: "ProductServiceLambdaExecutionRole",
+          RoleName: "ImportServiceLambdaExecutionRole",
+          ManagedPolicyArns: [
+            "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          ],
           AssumeRolePolicyDocument: {
             Statement: {
               Effect: "Allow",
@@ -60,28 +57,45 @@ const serverlessConfiguration: AWS = {
         },
       },
 
-      DynamoDBAccessPolicy: {
+      S3ImageBucket: {
+        Type: "AWS::S3::Bucket",
+        Properties: {
+          CorsConfiguration: {
+            CorsRules: [
+              {
+                AllowedHeaders: ["*"],
+                AllowedMethods: ["PUT"],
+                AllowedOrigins: cors.origins,
+              },
+            ],
+          },
+        },
+      },
+
+      S3ImageBucketAccessPolicy: {
         Type: "AWS::IAM::Policy",
         Properties: {
-          PolicyName: "ProductServiceDynamoDBAccessPolicy",
+          PolicyName: "ImportServiceS3ImageBucketAccessPolicy",
           Roles: [{ Ref: "LambdaExecutionRole" }],
           PolicyDocument: {
             Statement: [
               {
                 Effect: "Allow",
                 Action: [
-                  "dynamodb:Query",
-                  "dynamodb:Scan",
-                  "dynamodb:Get*",
-                  "dynamodb:Update*",
-                  "dynamodb:PutItem",
-                  "dynamodb:Delete*",
-                  "dynamodb:BatchGet*",
-                  "dynamodb:BatchWrite*",
+                  "s3:GetObject",
+                  "s3:PutObject",
+                  "s3:DeleteObject",
+                  "s3:CopyObject",
+                  "s3:GetObjectTagging",
+                  "s3:PutObjectTagging",
                 ],
                 Resource: [
-                  { "Fn::GetAtt": ["DynamoDbProductsTable", "Arn"] },
-                  { "Fn::GetAtt": ["DynamoDbStocksTable", "Arn"] },
+                  {
+                    "Fn::Join": [
+                      "",
+                      [{ "Fn::GetAtt": ["S3ImageBucket", "Arn"] }, "/*"],
+                    ],
+                  },
                 ],
               },
             ],

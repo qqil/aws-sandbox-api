@@ -6,9 +6,16 @@ export default {
   events: [
     {
       http: {
-        method: "POST",
-        path: "/products",
+        method: "GET",
+        path: "/import",
         cors,
+        request: {
+          parameters: {
+            querystrings: {
+              name: true,
+            },
+          },
+        },
       },
     },
   ],

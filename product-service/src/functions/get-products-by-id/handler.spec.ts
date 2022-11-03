@@ -4,6 +4,7 @@ import sinon from "sinon";
 import sinonChai from "sinon-chai";
 import { ProductService } from "../../services/product.service";
 import { Product } from "../../types/product";
+import apiGatewayEvent from "src/mocks/api-gateway-event";
 
 chai.use(sinonChai);
 
@@ -16,6 +17,7 @@ describe("Handler getProductsById", () => {
 
   it("should return product and status code 200", async () => {
     const event = {
+      ...apiGatewayEvent,
       httpMethod: "GET",
       pathParameters: {
         productId: "108",
@@ -24,11 +26,7 @@ describe("Handler getProductsById", () => {
 
     const getByIdStub = sandbox
       .stub(ProductService.prototype, "getById")
-      .returns(
-        new Promise((resolve) =>
-          resolve({ id: event.pathParameters.productId } as Product)
-        )
-      );
+      .resolves({ id: event.pathParameters.productId } as Product);
 
     const response = await getProductsById(event, null);
     const { product } = JSON.parse(response.body);
@@ -40,6 +38,7 @@ describe("Handler getProductsById", () => {
 
   it("should return 404", async () => {
     const event = {
+      ...apiGatewayEvent,
       httpMethod: "GET",
       pathParameters: {
         productId: "0",
@@ -48,7 +47,7 @@ describe("Handler getProductsById", () => {
 
     const getByIdStub = sandbox
       .stub(ProductService.prototype, "getById")
-      .returns(new Promise((resolve) => resolve(undefined)));
+      .resolves(undefined);
 
     const response = await getProductsById(event, null);
 

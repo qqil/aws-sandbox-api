@@ -1,12 +1,11 @@
 import middy from "@middy/core";
-import httpErrorHandler from "@middy/http-error-handler";
 import middyJsonBodyParser from "@middy/http-json-body-parser";
+import middyErrorHandler from "@middy/http-error-handler";
 import cors from "@middy/http-cors";
 
 export const middyfy = (handler) => {
   return middy(handler, { timeoutEarlyInMillis: 0 })
     .use(middyJsonBodyParser())
-    .use(httpErrorHandler({ logger: false }))
-    .use(cors())
-    .before((request) => console.log("Incoming request", request.event));
+    .use(middyErrorHandler({ logger: false }))
+    .use(cors());
 };

@@ -1,10 +1,10 @@
 import chai, { expect } from "chai";
-// import { main as createProduct } from "./handler";
 import sinon from "sinon";
 import sinonChai from "sinon-chai";
 import { describe } from "mocha";
 import { ProductService } from "@services/product.service";
 import { main as createProduct } from "./handler";
+import apiGatewayEvent from "src/mocks/api-gateway-event";
 
 chai.use(sinonChai);
 
@@ -23,6 +23,7 @@ describe("Handler createProduct", () => {
       stocks: 10,
     };
     const event = {
+      ...apiGatewayEvent,
       httpMethod: "POST",
       body: JSON.stringify(productData),
       headers: {
@@ -32,9 +33,7 @@ describe("Handler createProduct", () => {
 
     const storeStub = sandbox
       .stub(ProductService.prototype, "store")
-      .returns(
-        new Promise((resolve) => resolve({ ...productData, id: "myid" }))
-      );
+      .resolves({ ...productData, id: "myid" });
 
     const response = await createProduct(event, null);
     const body = JSON.parse(response.body);
@@ -51,6 +50,7 @@ describe("Handler createProduct", () => {
       stocks: 10,
     };
     const event = {
+      ...apiGatewayEvent,
       httpMethod: "POST",
       body: JSON.stringify(productData),
       headers: {
@@ -60,11 +60,8 @@ describe("Handler createProduct", () => {
 
     sandbox
       .stub(ProductService.prototype, "store")
-      .returns(
-        new Promise((resolve) =>
-          resolve({ ...productData, title: "test", id: "myid" })
-        )
-      );
+      .resolves({ ...productData, title: "test", id: "myid" });
+
     const response = await createProduct(event, null);
 
     expect(response.statusCode).to.be.equal(400);
