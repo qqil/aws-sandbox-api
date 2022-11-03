@@ -23,10 +23,6 @@ describe("Handler importProductsFile", () => {
     sandbox.restore();
   });
 
-  beforeEach(async () => {
-    sandbox.restore();
-  });
-
   it("should return presigned url", async () => {
     const event = {
       ...apiGatewayEvent,
