@@ -4,6 +4,7 @@ import getProductsById from "@functions/get-products-by-id";
 import getProductsList from "@functions/get-products-list";
 import createProduct from "@functions/create-product";
 import dynamoDbTables from "src/database/dynamodb.tables";
+import catalogBatchProcess from "@functions/catalog-batch-process";
 
 const serverlessConfiguration: AWS = {
   service: "product-service",
@@ -24,21 +25,15 @@ const serverlessConfiguration: AWS = {
       NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000",
       TABLE_PRODUCTS: "products",
       TABLE_STOCKS: "stocks",
+      CATALOG_ITEMS_QUEUE: { Ref: "SQSCatalogItemsQueue" },
+      SNS_PRODUCT_CREATED_TOPIC_ARN: { Ref: "SNSProductCreatedTopic" },
     },
   },
   functions: {
-    getProductsList: {
-      ...getProductsList,
-      role: { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
-    },
-    getProductsById: {
-      ...getProductsById,
-      role: { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
-    },
-    createProduct: {
-      ...createProduct,
-      role: { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
-    },
+    getProductsList,
+    getProductsById,
+    createProduct,
+    catalogBatchProcess,
   },
   resources: {
     Resources: {
@@ -48,6 +43,9 @@ const serverlessConfiguration: AWS = {
         Type: "AWS::IAM::Role",
         Properties: {
           RoleName: "ProductServiceLambdaExecutionRole",
+          ManagedPolicyArns: [
+            "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          ],
           AssumeRolePolicyDocument: {
             Statement: {
               Effect: "Allow",
@@ -87,6 +85,88 @@ const serverlessConfiguration: AWS = {
             ],
           },
         },
+      },
+
+      SQSCatalogItemsQueue: {
+        Type: "AWS::SQS::Queue",
+        Properties: {
+          ReceiveMessageWaitTimeSeconds: 20,
+          VisibilityTimeout: 30,
+        },
+      },
+
+      SQSCatalogItemsQueuePolicy: {
+        Type: "AWS::IAM::Policy",
+        Properties: {
+          PolicyName: "ProductServiceSQSCatalogItemsQueuePolicy",
+          Roles: [{ Ref: "LambdaExecutionRole" }],
+          PolicyDocument: {
+            Statement: [
+              {
+                Effect: "Allow",
+                Action: [
+                  "sqs:ReceiveMessage",
+                  "sqs:DeleteMessage",
+                  "sqs:GetQueueAttributes",
+                ],
+                Resource: [{ "Fn::GetAtt": ["SQSCatalogItemsQueue", "Arn"] }],
+              },
+            ],
+          },
+        },
+      },
+
+      SNSProductCreatedTopic: {
+        Type: "AWS::SNS::Topic",
+      },
+
+      SNSProductCreatedTopicSubscriptionEmptyStocks: {
+        Type: "AWS::SNS::Subscription",
+        Properties: {
+          TopicArn: { Ref: "SNSProductCreatedTopic" },
+          Protocol: "email",
+          Endpoint: "s.zakatov@gmail.com",
+          FilterPolicy: {
+            hasEmptyStocks: ["true"],
+          },
+        },
+      },
+
+      SNSProductCreatedTopicSubscriptionNonEmptyStocks: {
+        Type: "AWS::SNS::Subscription",
+        Properties: {
+          TopicArn: { Ref: "SNSProductCreatedTopic" },
+          Protocol: "email",
+          Endpoint: "sergejs_zakatovs@epam.com",
+          FilterPolicy: {
+            hasEmptyStocks: ["false"],
+          },
+        },
+      },
+
+      SNSProductCreatedTopicPolicy: {
+        Type: "AWS::IAM::Policy",
+        Properties: {
+          PolicyName: "ProductServiceSNSProductCreatedTopicPolicy",
+          Roles: [{ Ref: "LambdaExecutionRole" }],
+          PolicyDocument: {
+            Statement: [
+              {
+                Effect: "Allow",
+                Action: ["sns:Publish"],
+                Resource: [{ Ref: "SNSProductCreatedTopic" }],
+              },
+            ],
+          },
+        },
+      },
+    },
+    Outputs: {
+      CatalogItemsQueue: {
+        Value: { Ref: "SQSCatalogItemsQueue" },
+      },
+      CatalogItemsQueueArn: {
+        Value: { "Fn::GetAtt": ["SQSCatalogItemsQueue", "Arn"] },
       },
     },
   },

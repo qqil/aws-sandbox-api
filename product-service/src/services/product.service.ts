@@ -6,9 +6,14 @@ import {
   TransactWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { v4 } from "uuid";
-import type { Product, ProductServiceInterface } from "src/types/product";
+import {
+  Product,
+  productSchema,
+  productWithoutStocksSchema,
+} from "src/schemas/product";
+import { CreateProduct, createProductSchema } from "src/schemas/create-product";
 
-export class ProductService implements ProductServiceInterface {
+export class ProductService {
   constructor(
     protected readonly dynamoDBDocumentClient: DynamoDBDocumentClient,
     protected readonly config: { productsTable: string; stocksTable: string }
@@ -28,7 +33,7 @@ export class ProductService implements ProductServiceInterface {
           ({ product_id }) => product_id === id
         );
 
-        return { id, title, price, description, stocks };
+        return productSchema.cast({ id, title, price, description, stocks });
       }
     );
 
@@ -45,18 +50,57 @@ export class ProductService implements ProductServiceInterface {
 
     if (!response.Item) return;
 
-    const products = await this.joinStocks([response.Item] as Product[]);
+    const products = await this.joinStocks([
+      productWithoutStocksSchema.cast(response.Item),
+    ]);
 
     return products[0];
   }
 
   async store(product: Partial<Product>): Promise<Product> {
-    return this[product.id ? "update" : "put"](product);
+    if (product.id) return this.update(productSchema.cast(product));
+
+    return this.put(createProductSchema.cast(product));
   }
 
-  protected async put(product: Partial<Product>): Promise<Product> {
+  async putBatch(productsData: CreateProduct[]): Promise<Product[]> {
+    const transactItems = [];
+    const products: Product[] = [];
+
+    for (let i = 0; i < productsData.length; i++) {
+      const id = this.generateProductId();
+      const { stocks, ...productData } = productsData[i];
+
+      transactItems.push(
+        {
+          Put: {
+            TableName: this.config.productsTable,
+            Item: { ...productData, id },
+          },
+        },
+        {
+          Put: {
+            TableName: this.config.stocksTable,
+            Item: { product_id: id, stocks },
+          },
+        }
+      );
+
+      products.push(productSchema.cast({ ...productsData[i], id }));
+    }
+
+    await this.dynamoDBDocumentClient.send(
+      new TransactWriteCommand({
+        TransactItems: transactItems,
+      })
+    );
+
+    return products;
+  }
+
+  protected async put(product: CreateProduct): Promise<Product> {
     const { stocks, ...productData } = product;
-    productData.id = this.generateProductId();
+    const id = this.generateProductId();
 
     await this.dynamoDBDocumentClient.send(
       new TransactWriteCommand({
@@ -64,23 +108,23 @@ export class ProductService implements ProductServiceInterface {
           {
             Put: {
               TableName: this.config.productsTable,
-              Item: productData,
+              Item: { ...productData, id },
             },
           },
           {
             Put: {
               TableName: this.config.stocksTable,
-              Item: { stocks, product_id: productData.id },
+              Item: { stocks, product_id: id },
             },
           },
         ],
       })
     );
 
-    return { ...productData, stocks } as Product;
+    return productSchema.cast({ ...productData, id, stocks });
   }
 
-  protected async update(product: Partial<Product>) {
+  protected async update(product: Product): Promise<Product> {
     const { id, stocks, ...productData } = product;
 
     await this.dynamoDBDocumentClient.send(
@@ -109,10 +153,12 @@ export class ProductService implements ProductServiceInterface {
       })
     );
 
-    return product as Product;
+    return product;
   }
 
-  protected async joinStocks(products: Product[]): Promise<Product[]> {
+  protected async joinStocks(
+    products: Omit<Product, "stocks">[]
+  ): Promise<Product[]> {
     const stocksResponse = await this.dynamoDBDocumentClient.send(
       new BatchGetCommand({
         RequestItems: {
@@ -125,17 +171,22 @@ export class ProductService implements ProductServiceInterface {
       })
     );
 
-    stocksResponse.Responses[this.config.stocksTable].forEach((stockItem) => {
-      const product = products.find(
-        (product) => product.id === stockItem.product_id
+    const getProductStocks = (productId) => {
+      const stocksData = stocksResponse.Responses[this.config.stocksTable].find(
+        ({ product_id }) => product_id === productId
       );
 
-      if (!product) return;
+      if (!stocksData) return 0;
 
-      product.stocks = stockItem.stocks;
-    });
+      return stocksData.stocks;
+    };
 
-    return products;
+    return products.map((product) =>
+      productSchema.cast({
+        ...product,
+        stocks: getProductStocks(product.id),
+      })
+    );
   }
 
   protected generateProductId() {

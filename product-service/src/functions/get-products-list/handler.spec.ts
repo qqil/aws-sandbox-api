@@ -2,16 +2,24 @@ import chai, { expect } from "chai";
 import sinon from "sinon";
 import sinonChai from "sinon-chai";
 import apiGatewayEvent from "src/mocks/api-gateway-event";
+import { Product } from "src/schemas/product";
 import { ProductService } from "src/services/product.service";
-import { Product } from "src/types/product";
 import { main as getProductsList } from "./handler";
 
 chai.use(sinonChai);
 
 describe("Handler getProductsList", () => {
   const sandbox = sinon.createSandbox();
+  const env = {
+    TABLE_PRODUCTS: "products",
+    TABLE_STOCKS: "stocks",
+  };
 
   beforeEach(() => {
+    sandbox.stub(process, "env").value(env);
+  });
+
+  afterEach(() => {
     sandbox.restore();
   });
 
