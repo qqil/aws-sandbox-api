@@ -17,7 +17,7 @@ const catalogBatchProcess = async (event: SQSEvent) => {
 
   const productsData: CreateProduct[] = await Promise.all(
     event.Records.map(({ body: productData }) =>
-      createProductSchema.validate(createProductSchema.cast(productData))
+      createProductSchema.validate(productData)
     )
   );
 

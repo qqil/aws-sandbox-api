@@ -6,6 +6,7 @@ import { dynamoDBDocumentClient } from "@libs/dynamodb-client";
 import { middyfy } from "@libs/lambda";
 import validator from "@middy/validator";
 import { ProductService } from "@services/product.service";
+import { createProductSchema } from "src/schemas/create-product";
 import { eventSchema } from "./schema";
 
 const productService = new ProductService(dynamoDBDocumentClient, {
@@ -17,12 +18,15 @@ const createProduct: ValidatedEventAPIGatewayProxyEvent<
   typeof eventSchema
 > = async (event) => {
   const { title, description, price, stocks } = event.body;
-  const product = await productService.store({
+
+  const productData = await createProductSchema.validate({
     title,
     description,
     price,
     stocks,
   });
+
+  const product = await productService.store(productData);
 
   return formatJSONResponse({ product });
 };

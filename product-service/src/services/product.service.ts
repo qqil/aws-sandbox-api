@@ -11,7 +11,7 @@ import {
   productSchema,
   productWithoutStocksSchema,
 } from "src/schemas/product";
-import { CreateProduct, createProductSchema } from "src/schemas/create-product";
+import { CreateProduct } from "src/schemas/create-product";
 
 export class ProductService {
   constructor(
@@ -57,10 +57,10 @@ export class ProductService {
     return products[0];
   }
 
-  async store(product: Partial<Product>): Promise<Product> {
-    if (product.id) return this.update(productSchema.cast(product));
+  store(product: Product | CreateProduct): Promise<Product> {
+    if ("id" in product) return this.update(product);
 
-    return this.put(createProductSchema.cast(product));
+    return this.put(product);
   }
 
   async putBatch(productsData: CreateProduct[]): Promise<Product[]> {
@@ -171,7 +171,7 @@ export class ProductService {
       })
     );
 
-    const getProductStocks = (productId) => {
+    const getProductStocks = (productId: Product["id"]) => {
       const stocksData = stocksResponse.Responses[this.config.stocksTable].find(
         ({ product_id }) => product_id === productId
       );
