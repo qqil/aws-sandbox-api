@@ -3,15 +3,23 @@ import { main as getProductsById } from "./handler";
 import sinon from "sinon";
 import sinonChai from "sinon-chai";
 import { ProductService } from "../../services/product.service";
-import { Product } from "../../types/product";
 import apiGatewayEvent from "src/mocks/api-gateway-event";
+import { Product } from "src/schemas/product";
 
 chai.use(sinonChai);
 
 describe("Handler getProductsById", () => {
   const sandbox = sinon.createSandbox();
+  const env = {
+    TABLE_PRODUCTS: "products",
+    TABLE_STOCKS: "stocks",
+  };
 
   beforeEach(() => {
+    sandbox.stub(process, "env").value(env);
+  });
+
+  afterEach(() => {
     sandbox.restore();
   });
 

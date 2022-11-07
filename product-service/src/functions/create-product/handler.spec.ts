@@ -10,8 +10,16 @@ chai.use(sinonChai);
 
 describe("Handler createProduct", () => {
   const sandbox = sinon.createSandbox();
+  const env = {
+    TABLE_PRODUCTS: "products",
+    TABLE_STOCKS: "stocks",
+  };
 
   beforeEach(() => {
+    sandbox.stub(process, "env").value(env);
+  });
+
+  afterEach(() => {
     sandbox.restore();
   });
 
