@@ -11,10 +11,6 @@
   "engines": {
     "node": ">=14.15.0"
   },
-  "dependencies": {
-    "@middy/core": "^3.4.0",
-    "@middy/http-json-body-parser": "^3.4.0"
-  },
   "devDependencies": {
     "@serverless/typescript": "^3.0.0",
     "@types/aws-lambda": "^8.10.71",
@@ -28,6 +24,7 @@
     "json-schema-to-ts": "^1.5.0",
     "prettier": "^2.7.1",
     "serverless": "^3.0.0",
+    "serverless-dotenv-plugin": "^4.0.2",
     "serverless-esbuild": "^1.23.3",
     "ts-node": "^10.4.0",
     "tsconfig-paths": "^3.9.0",

@@ -16,6 +16,10 @@ export default {
             },
           },
         },
+        authorizer: {
+          type: "TOKEN",
+          authorizerId: { Ref: "BasicAuthorizer" },
+        },
       },
     },
   ],
