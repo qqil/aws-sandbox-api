@@ -17,9 +17,10 @@ const serverlessConfiguration: AWS = {
     environment: {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
       NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000",
-      BUCKET_NAME: { Ref: "S3ImageBucket" },
+      BUCKET_NAME: { Ref: "S3UploadBucket" },
       UPLOAD_DIR: "uploaded",
       PARSED_DIR: "parsed",
+      CATALOG_ITEMS_QUEUE: "${param:CatalogItemsQueue}",
     },
     apiGateway: {
       minimumCompressionSize: 1024,
@@ -27,14 +28,8 @@ const serverlessConfiguration: AWS = {
     },
   },
   functions: {
-    importProductsFile: {
-      ...importProductsFile,
-      role: { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
-    },
-    importFileParser: {
-      ...importFileParser,
-      role: { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
-    },
+    importProductsFile,
+    importFileParser,
   },
   resources: {
     Resources: {
@@ -57,7 +52,7 @@ const serverlessConfiguration: AWS = {
         },
       },
 
-      S3ImageBucket: {
+      S3UploadBucket: {
         Type: "AWS::S3::Bucket",
         Properties: {
           CorsConfiguration: {
@@ -72,10 +67,10 @@ const serverlessConfiguration: AWS = {
         },
       },
 
-      S3ImageBucketAccessPolicy: {
+      S3UploadBucketAccessPolicy: {
         Type: "AWS::IAM::Policy",
         Properties: {
-          PolicyName: "ImportServiceS3ImageBucketAccessPolicy",
+          PolicyName: "ImportServiceS3UploadBucketAccessPolicy",
           Roles: [{ Ref: "LambdaExecutionRole" }],
           PolicyDocument: {
             Statement: [
@@ -93,10 +88,27 @@ const serverlessConfiguration: AWS = {
                   {
                     "Fn::Join": [
                       "",
-                      [{ "Fn::GetAtt": ["S3ImageBucket", "Arn"] }, "/*"],
+                      [{ "Fn::GetAtt": ["S3UploadBucket", "Arn"] }, "/*"],
                     ],
                   },
                 ],
+              },
+            ],
+          },
+        },
+      },
+
+      SQSCatalogItemsQueuePolicy: {
+        Type: "AWS::IAM::Policy",
+        Properties: {
+          PolicyName: "ImportServiceSQSCatalogItemsQueuePolicy",
+          Roles: [{ Ref: "LambdaExecutionRole" }],
+          PolicyDocument: {
+            Statement: [
+              {
+                Effect: "Allow",
+                Action: ["sqs:SendMessage"],
+                Resource: ["${param:CatalogItemsQueueArn}"],
               },
             ],
           },

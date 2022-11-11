@@ -5,7 +5,7 @@ export default {
   events: [
     {
       s3: {
-        bucket: { Ref: "S3ImageBucket" },
+        bucket: { Ref: "S3UploadBucket" },
         existing: true,
         event: "s3:ObjectCreated:*",
         rules: [
@@ -15,4 +15,5 @@ export default {
       },
     },
   ],
+  role: { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
 };

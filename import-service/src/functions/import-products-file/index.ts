@@ -19,4 +19,5 @@ export default {
       },
     },
   ],
+  role: { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
 };

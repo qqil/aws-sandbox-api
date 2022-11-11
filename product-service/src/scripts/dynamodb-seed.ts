@@ -2,12 +2,12 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { fromIni } from "@aws-sdk/credential-providers";
 import * as serverlessConfig from "../../serverless";
 import { faker } from "@faker-js/faker";
-import { Product } from "src/types/product";
 import { v4 } from "uuid";
 import {
   DynamoDBDocumentClient,
   BatchWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { Product } from "src/schemas/product";
 
 const { profile = "default", region = "eu-west-1" } =
   serverlessConfig["default"]["provider"];

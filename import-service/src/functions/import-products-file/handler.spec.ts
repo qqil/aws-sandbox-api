@@ -10,8 +10,16 @@ chai.use(sinonChai);
 
 describe("Handler importProductsFile", () => {
   const sandbox = sinon.createSandbox();
+  const env = {
+    BUCKET_NAME: "test-bucket",
+    UPLOAD_DIR: "upload",
+  };
 
-  beforeEach(async () => {
+  beforeEach(() => {
+    sandbox.stub(process, "env").value(env);
+  });
+
+  afterEach(() => {
     sandbox.restore();
   });
 
@@ -23,12 +31,7 @@ describe("Handler importProductsFile", () => {
         name: "test.csv",
       },
     };
-    const env = {
-      BUCKET_NAME: "test-bucket",
-      UPLOAD_DIR: "upload",
-    };
 
-    sandbox.stub(process, "env").value(env);
     const presignerStub = sandbox
       .stub(S3RequestPresigner.prototype, "presign")
       .resolves({
@@ -55,12 +58,6 @@ describe("Handler importProductsFile", () => {
         name: "",
       },
     };
-    const env = {
-      BUCKET_NAME: "test-bucket",
-      UPLOAD_DIR: "upload",
-    };
-
-    sandbox.stub(process, "env").value(env);
 
     const response = await importProductsFile(event, null);
 
