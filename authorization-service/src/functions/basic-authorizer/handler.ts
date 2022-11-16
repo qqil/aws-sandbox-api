@@ -4,7 +4,7 @@ import { APIGatewayTokenAuthorizerHandler } from "aws-lambda";
 const checkCredentials = (username: string, password: string) => {
   if (!password || password == "") return false;
 
-  return process.env[username] === password;
+  return process.env[`USER_${username}`] === password;
 };
 
 const basicAuthorizer: APIGatewayTokenAuthorizerHandler = async (event) => {

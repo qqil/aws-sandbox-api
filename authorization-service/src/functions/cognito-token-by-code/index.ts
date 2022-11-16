@@ -7,11 +7,8 @@ export default {
     {
       http: {
         method: "POST",
-        path: "/products",
+        path: "/cognito/token",
         cors,
-        authorizer: {
-          arn: "${param:MyCloudStoreCustomersUserPoolArn}",
-        },
       },
     },
   ],

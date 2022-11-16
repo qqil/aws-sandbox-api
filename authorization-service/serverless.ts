@@ -1,5 +1,6 @@
 import type { AWS } from "@serverless/typescript";
 import basicAuthorizer from "@functions/basic-authorizer";
+import cognitoTokenByCode from "@functions/cognito-token-by-code";
 
 const serverlessConfiguration: AWS = {
   service: "authorization-service",
@@ -15,9 +16,14 @@ const serverlessConfiguration: AWS = {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
       NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000",
     },
+    apiGateway: {
+      minimumCompressionSize: 1024,
+      shouldStartNameWithService: true,
+    },
   },
   functions: {
     basicAuthorizer,
+    cognitoTokenByCode,
   },
   package: { individually: true },
   resources: {
@@ -54,8 +60,69 @@ const serverlessConfiguration: AWS = {
           },
         },
       },
+
+      MyCloudStoreCustomersUserPool: {
+        Type: "AWS::Cognito::UserPool",
+        Properties: {
+          UserPoolName: "MyCloudStoreCustomers",
+          AccountRecoverySetting: {
+            RecoveryMechanisms: [
+              {
+                Name: "verified_email",
+                Priority: 1,
+              },
+            ],
+          },
+          AutoVerifiedAttributes: ["email"],
+          MfaConfiguration: "OFF",
+          UsernameAttributes: ["email"],
+          UsernameConfiguration: {
+            CaseSensitive: false,
+          },
+          EmailConfiguration: {
+            EmailSendingAccount: "COGNITO_DEFAULT",
+          },
+          EmailVerificationMessage: "Code: {####}.",
+          EmailVerificationSubject: "Verification",
+        },
+      },
+
+      MyCloudStoreCustomersUserPoolClient: {
+        Type: "AWS::Cognito::UserPoolClient",
+        Properties: {
+          UserPoolId: { Ref: "MyCloudStoreCustomersUserPool" },
+          GenerateSecret: true,
+          CallbackURLs: [
+            "http://localhost:5173/auth/callback/cognito",
+            "http://localhost:4173/auth/callback/cognito",
+            "https://dhnwi3uoh4ikp.cloudfront.net/auth/callback/cognito",
+          ],
+          AllowedOAuthFlows: ["code"],
+          AllowedOAuthScopes: ["email", "openid"],
+          AllowedOAuthFlowsUserPoolClient: true,
+          SupportedIdentityProviders: ["COGNITO"],
+          PreventUserExistenceErrors: "ENABLED",
+        },
+      },
+
+      MyCloudStoreCustomersUserPoolDomain: {
+        Type: "AWS::Cognito::UserPoolDomain",
+        Properties: {
+          Domain: "mycloudstore",
+          UserPoolId: { Ref: "MyCloudStoreCustomersUserPool" },
+        },
+      },
     },
     Outputs: {
+      MyCloudStoreCustomersUserPoolId: {
+        Value: { Ref: "MyCloudStoreCustomersUserPool" },
+      },
+      MyCloudStoreCustomersUserPoolClientId: {
+        Value: { Ref: "MyCloudStoreCustomersUserPoolClient" },
+      },
+      MyCloudStoreCustomersUserPoolArn: {
+        Value: { "Fn::GetAtt": ["MyCloudStoreCustomersUserPool", "Arn"] },
+      },
       BasicAuthorizerLambdaArn: {
         Value: {
           "Fn::Join": [

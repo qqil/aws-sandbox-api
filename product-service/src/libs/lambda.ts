@@ -5,7 +5,7 @@ import cors from "@middy/http-cors";
 
 export const middyfy = (handler) => {
   return middy(handler, { timeoutEarlyInMillis: 0 })
+    .use(cors())
     .use(middyJsonBodyParser())
-    .use(middyErrorHandler({ logger: false }))
-    .use(cors());
+    .use(middyErrorHandler({ logger: false }));
 };

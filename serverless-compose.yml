@@ -14,3 +14,7 @@ services:
   
   product-service:
     path: product-service
+    dependsOn:
+      - authorization-service
+    params:
+      MyCloudStoreCustomersUserPoolArn: ${authorization-service.MyCloudStoreCustomersUserPoolArn}
