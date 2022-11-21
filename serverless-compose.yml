@@ -1,11 +1,20 @@
 services:
+  authorization-service:
+    path: authorization-service
+
   import-service:
     path: import-service 
     dependsOn:
+      - authorization-service
       - product-service
     params:
       CatalogItemsQueue: ${product-service.CatalogItemsQueue} 
       CatalogItemsQueueArn: ${product-service.CatalogItemsQueueArn} 
+      BasicAuthorizerLambdaArn: ${authorization-service.BasicAuthorizerLambdaArn}
   
   product-service:
     path: product-service
+    dependsOn:
+      - authorization-service
+    params:
+      MyCloudStoreCustomersUserPoolArn: ${authorization-service.MyCloudStoreCustomersUserPoolArn}

@@ -114,6 +114,29 @@ const serverlessConfiguration: AWS = {
           },
         },
       },
+
+      BasicAuthorizer: {
+        Type: "AWS::ApiGateway::Authorizer",
+        Properties: {
+          Name: "BasicAuthorizer",
+          Type: "TOKEN",
+          AuthorizerUri: "${param:BasicAuthorizerLambdaArn}",
+          IdentitySource: "method.request.header.Authorization",
+          IdentityValidationExpression: "Basic (.*)",
+          RestApiId: { Ref: "ApiGatewayRestApi" },
+        },
+      },
+
+      GatewayResponse4xx: {
+        Type: "AWS::ApiGateway::GatewayResponse",
+        Properties: {
+          ResponseParameters: {
+            "gatewayresponse.header.Access-Control-Allow-Origin": "'*'",
+          },
+          ResponseType: "DEFAULT_4XX",
+          RestApiId: { Ref: "ApiGatewayRestApi" },
+        },
+      },
     },
   },
   package: { individually: true },
